@@ -5,7 +5,5 @@
 #define RMVS_H
 
 int addFunction(int, int);
-float analogPressure;
-float 
 
 #endif
