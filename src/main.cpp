@@ -90,12 +90,17 @@ void loop() {
   batteryVoltage = map(analogRead(batteryVoltagePin), 1023, 0, 0, 30);  // Read frequency
   xPower = map(analogRead(xPowerPin), 1023, 0,0,10); // Read xPower
 
-  // Print measured values to OLED screen
-  display.clearDisplay();
-  printOLED(0,0,String("P (mbar): " + String(pressure)));
-  printOLED(0,9,String("T (s): " + String(pressurePeriod)));
-  printOLED(0,18,String("Batt(V): " + String(batteryVoltage)));
-  printOLED(0,27,String("Power: " + String(xPower)));
+  
+  // Print measured values to OLED screen. Update every 1/2 second.
+  if (lastUpdate + 500 < millis()){
+    display.clearDisplay();
+    printOLED(0,0,String("P (mbar): " + String(pressure)));
+    printOLED(0,9,String("T (s): " + String(pressurePeriod)));
+    printOLED(0,18,String("Batt(V): " + String(batteryVoltage)));
+    printOLED(0,27,String("Power: " + String(xPower)));
+    lastUpdate = millis();
+  }
+ 
   
   // Check threshold values for pressure
   if ((pressure > pressureUV) || (pressure < pressureLV) || (pressurePeriod > pressurePeriodUV) || (pressurePeriod < pressurePeriodLV)) {
@@ -126,7 +131,7 @@ void loop() {
 
 
 if (!xPowerOK || !xPressureOK) {
-  toneAC(300, 10, 300, false); // Play thisNote at full volume for noteDuration in the background.
+  toneAC(300, 10, 100, false); // Play thisNote at full volume for noteDuration in the background.
 }
 
 }
