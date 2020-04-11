@@ -5,5 +5,6 @@
 #define RMVS_H
 
 int addFunction(int, int);
+void printOLED(int, int, char);
 
 #endif
