@@ -1,0 +1,50 @@
+{
+    "name": "Plotter", 
+    "version": "2.3.3", 
+    "keywords": [
+        "data", 
+        "processing"
+    ], 
+    "description": "An Arduino library for easy plotting on host computer via serial communication.", 
+    "frameworks": [
+        "arduino"
+    ], 
+    "platforms": [
+        "atmelavr", 
+        "atmelsam", 
+        "espressif32", 
+        "espressif8266", 
+        "intel_arc32", 
+        "microchippic32", 
+        "nordicnrf51", 
+        "nordicnrf52", 
+        "ststm32", 
+        "teensy", 
+        "timsp430"
+    ], 
+    "authors": [
+        {
+            "email": "devinaconley@gmail.com", 
+            "url": null, 
+            "maintainer": true, 
+            "name": "Devin Conley"
+        }
+    ], 
+    "repository": {
+        "type": "git", 
+        "url": "https://github.com/devinaconley/arduino-plotter"
+    }, 
+    "homepage": null, 
+    "export": {
+        "include": "plotter", 
+        "exclude": [
+            "extras", 
+            "docs", 
+            "tests", 
+            "test", 
+            "*.doxyfile", 
+            "*.pdf"
+        ]
+    }, 
+    "id": 850
+}
