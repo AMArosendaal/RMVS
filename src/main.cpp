@@ -3,13 +3,16 @@
 #include <Adafruit_GFX.h>
 #include <Adafruit_SSD1306.h>
 #include <toneAC.h>
+#include "Plotter.h"
 
 #define OLED_ADDR   0x3C  // OLED display TWI address
 #define SCREEN_WIDTH 128  // OLED display width, in pixels
 #define SCREEN_HEIGHT 64  // OLED display height, in pixels
 
-// *** VIRTUAL INPUTS
+// *** Real INPUTS
 const int pressurePin = A0;       // (A0) select the input pin for potMeter A  
+// *** VIRTUAL INPUTS
+
 const int pressurePeriodPin = A1; // (A1) select the input pin for potMeter B
 const int  batteryVoltagePin = A2; // (A2) select the input pin for potMeter C
 const int  xPowerPin = A3;         // (A3) select the input for Potmeter D 
@@ -22,9 +25,10 @@ const int buzzerPin = 7;
 
 // *** OTHER VARIABLES
 
+const float PressureSensorOffset = 88;
 float pressure;               // Measured pressure from spx? sensor. (0-100 mbar)
-float  pressureLV = 0;      // Pressure lower value
-float  pressureUV = 100;      // Pressure upper value
+float  pressureLV = -5;      // Pressure lower value
+float  pressureUV = 50;      // Pressure upper value (100). 50 mbar to be able to use breath to set alarm
 int pressurePeriod;           // Period between pressure spikes. (2 - 6 s)
 int  pressurePeriodLV = 2;    // Period lower value
 int  pressurePeriodUV = 6;   // Perid upper value 
@@ -43,6 +47,9 @@ unsigned long buzzerFreq = 500;            // Buzzer frequency
 #define OLED_RESET     4 // Reset pin # (or -1 if sharing Arduino reset pin)
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 
+// Also declare plotter as global
+Plotter p;
+
 void printOLED(int X,int Y, String Text){
   display.setCursor(X,Y);
   display.print(Text);
@@ -51,6 +58,9 @@ void printOLED(int X,int Y, String Text){
 
 void setup() {
   Serial.begin(9600); // initialize serial
+
+  p.Begin(); // initilize plotter
+  p.AddTimeGraph( "5 variable time graph", 3000, "Pressure (kPa)", pressure);
 
   pinMode (rLedPin, OUTPUT);
   pinMode (yLedPin, OUTPUT);
@@ -83,16 +93,21 @@ void setup() {
 }
 
 void loop() {
-
-  // Read potMeters
-  pressure = map(analogRead(pressurePin), 1023, 0, -100, 200);  // Read pressure
-  pressurePeriod = map(analogRead(pressurePeriodPin), 1023, 0, 0, 10);  // Read frequency
-  batteryVoltage = map(analogRead(batteryVoltagePin), 1023, 0, 0, 30);  // Read frequency
-  xPower = map(analogRead(xPowerPin), 1023, 0,0,10); // Read xPower
-
   
+  // Read pressure sensor MPX5010DP
+    pressure = analogRead(pressurePin); // Raw analog value
+    pressure = pressure * 5/1023; // Analog value to Voltage
+    pressure = ((pressure/5)-0.04)/0.09; // Transfer function from datasheet 
+    pressure = 10 * pressure; // kPa to mbar
+    pressure = pressure + 0; // Offset, (what is our offset ? )
+
+  // Read virtual parameters from potMeters
+  pressurePeriod = map(analogRead(pressurePeriodPin), 1023, 0, 0, 10);  // Read virtual frequency
+  batteryVoltage = map(analogRead(batteryVoltagePin), 1023, 0, 0, 30);  // Read virtual battery Voltge
+  xPower = map(analogRead(xPowerPin), 1023, 0,0,10); // Read main power input
+
   // Print measured values to OLED screen. Update every 1/2 second.
-  if (lastUpdate + 500 < millis()){
+  if (lastUpdate + 1000 < millis()){
     display.clearDisplay();
     printOLED(0,0,String("P (mbar): " + String(pressure)));
     printOLED(0,9,String("T (s): " + String(pressurePeriod)));
@@ -134,4 +149,6 @@ if (!xPowerOK || !xPressureOK) {
   toneAC(300, 10, 100, false); // Play thisNote at full volume for noteDuration in the background.
 }
 
+// p.Plot();
+// Serial.println(pressure);
 }
