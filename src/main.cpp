@@ -8,16 +8,12 @@
 #define SCREEN_WIDTH 128  // OLED display width, in pixels
 #define SCREEN_HEIGHT 64  // OLED display height, in pixels
 
-// smoothed z-score algorithm
-const int lag = 30; // lag-1 (5) for the smoothing functions
-const float threshold = 7; //3.5 standard deviations for signal
-float influence = 0.5; //between 0 and 1, where 1 is normal influence, 0.5 is half
-float floatArray[50];
-float mean; 
-float stdev;
-float z_score;
-int signal;
+// Schmitt algorithm
 long lastInsp = 0;
+int signal = 0;
+int risingTrigger = 40;
+int fallingTrigger = 3;
+bool detectionState = false;
 
 // *** VIRTUAL INPUTS
 const int pressurePin = A0;       // (A0) select the input pin for potMeter A  
@@ -44,41 +40,12 @@ float  batteryVoltageLV = 20; // Battery voltage lower value
 bool xPower;                  // Power available. 
 bool xPressureOK;             // If true, pressure is OK
 bool xPowerOK;              // If true, power supply & battery is OK
-String errorMessage;          // errorMessage containing feedback 
-bool xBuzzerState = false; 
 
 unsigned long lastUpdate = 0;          // Required for buzzer
-unsigned long buzzerFreq = 500;            // Buzzer frequency
 
 // Declaration for an SSD1306 display connected to I2C (SDA, SCL pins)
 #define OLED_RESET     4 // Reset pin # (or -1 if sharing Arduino reset pin)
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
-
-float getMean (float inptArray[]){
-    float s;
-    s = 0;
-
-    for ( int i = 0; i <lag; i++)
-    {
-        s = s+ inptArray[i];
-    }
-
-    return s/lag;
-}
-
-float getSTD (float inptArray[], float mean){
-    float s;
-    s = 0;
-
-    for ( int i = 0; i <lag; i++)
-    {
-        s = s + (abs(inptArray[i] - mean) * abs(inptArray[i] - mean));
-    }
-
-    s = sqrt(s/(lag+1));
-
-    return s;
-}
 
 void printOLED(int X,int Y, String Text){
   display.setCursor(X,Y);
@@ -87,6 +54,7 @@ void printOLED(int X,int Y, String Text){
 }
 
 void setup() {
+
   Serial.begin(9600); // initialize serial
   pinMode (rLedPin, OUTPUT);
   pinMode (yLedPin, OUTPUT);
@@ -168,36 +136,30 @@ void loop() {
     digitalWrite(gLedPin, LOW);
   }
 
-
 if (!xPowerOK || !xPressureOK) {
-  // toneAC(300, 10, 100, false); // Play thisNote at full volume for noteDuration in the background.
+  //  toneAC(10, 10, 100, false); // Play thisNote at full volume for noteDuration in the background.
 }
 
-// Create signal based on Z-score value
+if ((((millis()-lastInsp)/1000) > pressurePeriodUV)){
+  pressurePeriod = 999;
+}
 
-mean = getMean(floatArray); // get mean
-stdev = getSTD(floatArray, mean); // get stdev
+// Create signal based on schmitt trigger
+  if ((pressure > risingTrigger) && !detectionState) {
+    detectionState = !detectionState;
+  }
 
-  if ((abs(pressure-mean) > abs(threshold * stdev)) && ((lastInsp + 1500) < millis()) && (pressure > mean)) {
+  if ((pressure < fallingTrigger) && detectionState){
     signal = 1;
     pressurePeriod = (millis()-lastInsp)/1000;
     lastInsp = millis();
+    detectionState = !detectionState;
   }
   else {
     signal = 0;
   }
-// // } 
-
-// Fill vector with latest pressure value 
-for (int i = 0 ; i <lag ; i++){
-  floatArray[i] = floatArray[i+1];
-}
-
-floatArray[lag]  = pressure;
 
 Serial.print(signal);
 Serial.print("\t");
-Serial.print(pressure);
-Serial.print("\t");
-Serial.println(mean);
+Serial.println(pressure);
 }
