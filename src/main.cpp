@@ -8,6 +8,14 @@
 #define SCREEN_WIDTH 128  // OLED display width, in pixels
 #define SCREEN_HEIGHT 64  // OLED display height, in pixels
 
+
+// buzzer
+int buzzerPin = 9;
+long lastBuzzerUpdate = 0; 
+long buzzerFrequency = 2000;
+long buzzerPeriod = (1/buzzerFrequency)*1000;
+bool buzzerState = false;
+
 // Schmitt algorithm
 long lastInsp = 0;
 int signal = 0;
@@ -30,7 +38,6 @@ const int  xPowerPin = A3;         // (A3) select the input for Potmeter D
 const int rLedPin = 2;
 const int yLedPin = 3;
 const int gLedPin = 4;
-const int buzzerPin = 7;
 
 // *** OTHER VARIABLES
 const float PressureSensorOffset = 88;
@@ -71,6 +78,8 @@ float getMean (float inptArray[]){
 }
 
 void setup() {
+
+  pinMode(buzzerPin, OUTPUT);
 
   Serial.begin(9600); // initialize serial
   pinMode (rLedPin, OUTPUT);
@@ -175,7 +184,11 @@ if ((((millis()-lastInsp)/1000) > pressurePeriodUV)){
   }
 
 if (!xPowerOK || !xPressureOK) {
-  //  toneAC(10, 10, 100, false); // Play thisNote at full volume for noteDuration in the background.
+if ((lastBuzzerUpdate + buzzerPeriod) < millis()){
+    digitalWrite(buzzerPin, !buzzerState);
+    buzzerState = !buzzerState;
+    lastBuzzerUpdate = millis();
+  }
 }
 
 // Fill vector with latest pressure value 
