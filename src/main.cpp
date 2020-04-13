@@ -12,8 +12,13 @@
 long lastInsp = 0;
 int signal = 0;
 int risingTrigger = 40;
+int risingMeanTrigger = 10;
 int fallingTrigger = 3;
 bool detectionState = false;
+const int lag = 30; // lag-1 (5) for the smoothing functions
+const float threshold = 7; //3.5 standard deviations for signal
+float floatArray[50];
+float mean; 
 
 // *** VIRTUAL INPUTS
 const int pressurePin = A0;       // (A0) select the input pin for potMeter A  
@@ -51,6 +56,18 @@ void printOLED(int X,int Y, String Text){
   display.setCursor(X,Y);
   display.print(Text);
   display.display();
+}
+
+float getMean (float inptArray[]){
+    float s;
+    s = 0;
+
+    for ( int i = 0; i <lag; i++)
+    {
+        s = s+ inptArray[i];
+    }
+
+    return s/lag;
 }
 
 void setup() {
@@ -144,12 +161,15 @@ if ((((millis()-lastInsp)/1000) > pressurePeriodUV)){
   pressurePeriod = 999;
 }
 
+
+mean = getMean(floatArray); // get mean
+
 // Create signal based on schmitt trigger
   if ((pressure > risingTrigger) && !detectionState) {
     detectionState = !detectionState;
   }
 
-  if ((pressure < fallingTrigger) && detectionState){
+  if ((pressure < fallingTrigger) && detectionState && mean > risingMeanTrigger){
     signal = 1;
     pressurePeriod = (millis()-lastInsp)/1000;
     lastInsp = millis();
@@ -159,7 +179,15 @@ if ((((millis()-lastInsp)/1000) > pressurePeriodUV)){
     signal = 0;
   }
 
+// Fill vector with latest pressure value 
+for (int i = 0 ; i <lag ; i++){
+  floatArray[i] = floatArray[i+1];
+}
+floatArray[lag]  = pressure;
+
 Serial.print(signal);
 Serial.print("\t");
-Serial.println(pressure);
+Serial.print(pressure);
+Serial.print("\t");
+Serial.println(mean);
 }
