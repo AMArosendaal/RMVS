@@ -38,7 +38,7 @@ float pressure;               // Measured pressure from spx? sensor. (0-100 mbar
 float  pressureLV = -5;      // Pressure lower value
 float  pressureUV = 50;      // Pressure upper value (100). 50 mbar to be able to use breath to set alarm
 float pressurePeriod;           // Period between pressure spikes. (2 - 6 s)
-int  pressurePeriodLV = 0;    // Period lower value
+int  pressurePeriodLV = 2;    // Period lower value
 int  pressurePeriodUV = 6;   // Perid upper value 
 float batteryVoltage;         // Battery voltage. (0-30 V)
 float  batteryVoltageLV = 20; // Battery voltage lower value  
